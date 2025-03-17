@@ -1,0 +1,23 @@
+Package: rtRecalibrate
+Type: Package
+Title: Recalibration of rt axis in mzML objects (e.g. from LC-HRMS)
+Version: 0.1.03
+Author: Carl Brunius <carl.brunius@chalmers.se>,
+    Johannes Rainer <johannes.rainer@eurac.edu>
+Maintainer: Carl Brunius <carl.brunius@chalmers.se>
+Description: The package contains functions to perform alignment of the
+    retention time (RT) axis based on metabolite feature landmarks.
+Imports:
+    methods,
+    MSnbase,
+    xcms,
+    foreach,
+    doParallel,
+    MsCoreUtils,
+    Spectra,
+    mgcv,
+    BiocParallel
+License: GPL-2
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.2.3
