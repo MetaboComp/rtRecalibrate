@@ -1,19 +1,25 @@
 #' Recalibrate retention time axis of mzML file
 #'
 #' @param files Path to mzML file(s)
-#' @param lamas Data frame with 2 columns describing the landmarks: m/z in the first and RT in the second
+#' @param lamas Data frame with 2 columns describing the landmarks:
+#'  m/z in the first and RT in the second
 #' @param method Type of warping performed: GAM or loess
 #' @param dRT_roi Determines RT width of ROIs for detecting landmarks
 #' @param ppm_roi Determines m/z width (in ppm) of ROIs for detecting landmarks
 #' @param peakwidth CentWave parameter to XCMS for detecting peaks in ROIs
 #' @param dRT_match Tolerance (dRT) for matching possible ROI peaks to landmarks
-#' @param ppm_match Tolerance (dPPM) for matching possible ROI peaks to landmarks
-#' @param bs GAM smoothing method (defaults to thin plate; NB: B- and P-splines have been shown to produce artefacts)
+#' @param ppm_match Tolerance (dPPM) for matching
+#'  possible ROI peaks to landmarks
+#' @param bs GAM smoothing method (defaults to thin plate;
+#'  NB: B- and P-splines have been shown to produce artefacts)
 #' @param span Loess smoothing parameter
 #' @param ssqRatio Parameter for removing outliers in the warping
-#' @param zeroWeight Adding additional weight to the zero point {0,0}, reduces "the"weird" warping in the early RT range 
-#' @param jpg Whether to store diagnostic plot in jpg format in "rtRecal_log/*.jpg" (TRUE/FALSE)
-#' @param plot Whether to produce plots (TRUE/FALSE; if jpg is TRUE, plots go to file instead of plot window)
+#' @param zeroWeight Adding additional weight to the zero point {0,0},
+#'  reduces "the"weird" warping in the early RT range 
+#' @param jpg Whether to store diagnostic plot in jpg format
+#'  in "rtRecal_log/*.jpg" (TRUE/FALSE)
+#' @param plot Whether to produce plots
+#'  (TRUE/FALSE; if jpg is TRUE, plots go to file instead of plot window)
 #' @param save Whether to save recalibrated file in "rtRecal/*.mzML"
 #' @param ... Additional arguments
 #'
@@ -81,14 +87,17 @@ rtRecalibrate <- function(files,
     col <- rainbow(length(corrections))
     
     # Actual RT correction plots
-    plot(0, 0, ylim = c(dRTmin, dRTmax), xlim = c(xmin, xmax), type = 'n', las = 1, xlab = 'Recorded Retention Time', ylab = 'Retention Time Alignment')
+    plot(0, 0, ylim = c(dRTmin, dRTmax), xlim = c(xmin, xmax), type = 'n',
+         las = 1, xlab = 'Recorded Retention Time',
+         ylab = 'Retention Time Alignment')
     for (i in 1:length(corrections)) {
       lines(corrections[[i]]$RTOld, 
             corrections[[i]]$dRT,
             col = col[i])
     }
     
-    legend('topleft', legend = names(corrections), col = col, lty = 1, bty = 'n')
+    legend('topleft', legend = names(corrections),
+           col = col, lty = 1, bty = 'n')
   }
   
   return(invisible(corrections))
