@@ -2,8 +2,10 @@
 #'
 #' @param raw Original data (in MsExperiment or MSnbase format)
 #' @param adj RT-adjusted data (in same format as raw)
-#' @param col Optional argument to specify plot color (should correspond to the order of files in raw and adj)
-#' @param legend Optional argument to plot (TRUE; default) or suppress (FALSE) the legend 
+#' @param col Optional argument to specify plot color
+#'  (should correspond to the order of files in raw and adj)
+#' @param legend Optional argument to plot (TRUE; default)
+#'  or suppress (FALSE) the legend 
 #' @param cex.legend Optional argument to change font size in legend
 #'
 #' @return Returns a plot of RT adjustment vs the original recorded RTs
@@ -35,8 +37,13 @@ plotRTAdjust <- function(raw, adj, col, legend = TRUE, cex.legend = 0.5) {
   if(missing(col)) col <- rainbow(nFiles)
   
   # Some basic sanity checks
-  if(length(col) != nFiles) stop('color argument not matching length of files')
-  if(any(names != basename(fileNames(adj)))) stop('File mismatch between raw and adjusted')
+  if(length(col) != nFiles){
+    stop('color argument not matching length of files')
+  } 
+  if(any(names != basename(fileNames(adj)))){
+    stop('File mismatch between raw and adjusted')
+  }
+    
   
   # Extract raw and adjusted RTs
   rt_raw <- split(rtime(raw), fromFile(raw))
@@ -59,8 +66,9 @@ plotRTAdjust <- function(raw, adj, col, legend = TRUE, cex.legend = 0.5) {
   }
   
   # Actual RT correction plots
-  plot(0, 0, ylim = c(dRTmin, dRTmax), xlim = c(xmin, xmax), type = 'n', las = 1, 
-       xlab = expression(RT[raw]), ylab = expression(RT[adj] - RT[raw]))
+  plot(0, 0, ylim = c(dRTmin, dRTmax), xlim = c(xmin, xmax),
+       type = 'n', las = 1, xlab = expression(RT[raw]),
+       ylab = expression(RT[adj] - RT[raw]))
   for (i in 1:nFiles) {
     lines(rt_raw[[i]], 
           dRT[[i]],

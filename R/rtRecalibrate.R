@@ -7,7 +7,7 @@
 #' @param ppm_roi Determines m/z width (in ppm) of ROIs for detecting landmarks
 #' @param peakwidth CentWave parameter to XCMS for detecting peaks in ROIs
 #' @param dRT_match Tolerance (dRT) for matching possible ROI peaks to landmarks
-#' @param ppm_match Tolerance (dRT) for matching possible ROI peaks to landmarks
+#' @param ppm_match Tolerance (dPPM) for matching possible ROI peaks to landmarks
 #' @param bs GAM smoothing method (defaults to thin plate; NB: B- and P-splines have been shown to produce artefacts)
 #' @param span Loess smoothing parameter
 #' @param ssqRatio Parameter for removing outliers in the warping

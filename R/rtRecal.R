@@ -1,21 +1,28 @@
-#' Recalibrate retention time axis of mzML file to landmark reference - One file only
+#' Recalibrate retention time axis of mzML file to landmark reference
+#'  - One file only
 #'
-#' Please see rtRecalibrate for standard interface for multiple files and parallelization
+#' Please see rtRecalibrate for standard interface for
+#'  multiple files and parallelization
 #'
 #' @param file Path to a mzML file
-#' @param lamas Data frame with 2 columns describing the landmarks: m/z in the first and RT in the second
+#' @param lamas Data frame with 2 columns describing the landmarks: m/z in the
+#'  first and RT in the second
 #' @param method Type of warping performed: GAM or loess
 #' @param dRT_roi Determines RT width of ROIs for detecting landmarks
 #' @param ppm_roi Determines m/z width (in ppm) of ROIs for detecting landmarks
 #' @param peakwidth CentWave parameter to XCMS for detecting peaks in ROIs
 #' @param dRT_match Tolerance (dRT) for matching possible ROI peaks to landmarks
 #' @param ppm_match Tolerance (dRT) for matching possible ROI peaks to landmarks
-#' @param bs GAM smoothing method (defaults to thin plate; NB: B- and P-splines have been shown to produce artefacts)
+#' @param bs GAM smoothing method (defaults to thin plate; NB: B- and P-splines 
+#' have been shown to produce artefacts)
 #' @param span Loess smoothing parameter
 #' @param ssqRatio Parameter for removing outliers in the warping
-#' @param zeroWeight Adding additional weight to the zero point {0,0}, reduces "the"weird" warping in the early RT range
-#' @param jpg Whether to store diagnostic plot in jpg format in "rtRecal_log/*.jpg" (TRUE/FALSE)
-#' @param plot Whether to produce plots (TRUE/FALSE; if jpg is TRUE, plots go to file instead of plot window)
+#' @param zeroWeight Adding additional weight to the zero point {0,0}, 
+#' reduces "the"weird" warping in the early RT range
+#' @param jpg Whether to store diagnostic plot in jpg format in 
+#' "rtRecal_log/*.jpg" (TRUE/FALSE)
+#' @param plot Whether to produce plots (TRUE/FALSE; if jpg is TRUE, plots go 
+#' to file instead of plot window)
 #' @param save Whether to save recalibrated file in "rtRecal/*.mzML"
 #'
 #' @return Depends of save, plot and jpg
@@ -42,14 +49,26 @@ rtRecal <- function(file,
   # Setup storage
   if (jpg) {
     plot <- TRUE
-    if(!dir.exists(paste0(dirname(file), '/rtRecal_log'))) dir.create(paste0(dirname(file), '/rtRecal_log'))
-    if(file.exists(paste0(dirname(file), '/rtRecal_log/', basename(file),'.jpg'))) file.remove(paste0(dirname(file), '/rtRecal_log/', basename(file),'.jpg'))
-    jpeg(filename = paste0(dirname(file), '/rtRecal_log/', basename(file),'.jpg'), width = 1000, height = 2000, pointsize = 30)
+    if(!dir.exists(paste0(dirname(file), '/rtRecal_log'))){
+      dir.create(paste0(dirname(file), '/rtRecal_log'))
+    }
+    if(file.exists(paste0(dirname(file), '/rtRecal_log/',
+                          basename(file),'.jpg'))){
+      file.remove(paste0(dirname(file), '/rtRecal_log/', basename(file),'.jpg'))
+    }
+      
+    jpeg(filename = paste0(dirname(file), '/rtRecal_log/',
+                           basename(file),'.jpg'), width = 1000,
+                           height = 2000, pointsize = 30)
   }
 
   if(save) {
-    if(!dir.exists(paste0(dirname(file), '/rtRecal'))) dir.create(paste0(dirname(file), '/rtRecal'))
-    if(file.exists(paste0(dirname(file), '/rtRecal/', basename(file)))) file.remove(paste0(dirname(file), '/rtRecal/', basename(file)))
+    if(!dir.exists(paste0(dirname(file), '/rtRecal'))){
+      dir.create(paste0(dirname(file), '/rtRecal'))
+    }
+    if(file.exists(paste0(dirname(file), '/rtRecal/', basename(file)))){
+      file.remove(paste0(dirname(file), '/rtRecal/', basename(file)))
+    }
   }
 
   if(missing(method)) method <- 'GAM'
@@ -86,7 +105,8 @@ rtRecal <- function(file,
   for (r in 1:nrow(lamas)) {
     mz <- lamas[r, ]$MZ
     rt <- lamas[r, ]$RT
-    match <- (abs(mz - peaks$mz) < (ppm_match * 1e-6 * mz)) & (abs(rt - peaks$rt) < dRT_match)
+    match <- (abs(mz - peaks$mz) < (ppm_match * 1e-6 * mz)) &
+                (abs(rt - peaks$rt) < dRT_match)
     matches[r] <- sum(match)
     if (sum(match) == 1) matchRT[r] <- peaks$rt[match]
   }
@@ -100,7 +120,8 @@ rtRecal <- function(file,
   weights[1] <- zeroWeight
 
   makeGAM <- function(RTDF, bs, ssqRatio, weights = weights) {
-    gam <- mgcv::gam(reference ~ s(observed, bs = bs), weights = weights, data = RTDF)
+    gam <- mgcv::gam(reference ~ s(observed, bs = bs),
+                     weights = weights, data = RTDF)
     pred <- predict(gam)
     SSq <- resid(gam)^2
     meanSSq <- mean(SSq)
@@ -111,7 +132,8 @@ rtRecal <- function(file,
   }
 
   makeLoess <- function(RTDF, span, ssqRatio, weights = weights) {
-    loess <- loess(reference ~ observed, weights = weights, span = span, data = RTDF)
+    loess <- loess(reference ~ observed, weights = weights,
+                   span = span, data = RTDF)
     pred <- predict(loess)
     SSq <- resid(loess)^2
     meanSSq <- mean(SSq)
@@ -130,10 +152,13 @@ rtRecal <- function(file,
   if(method == 'GAM') {
     fit <- makeGAM(RTDF = rtDF, bs = bs, ssqRatio = ssqRatio, weights = weights)
   } else {
-    fit <- makeLoess(RTDF = rtDF, span = span, ssqRatio = ssqRatio, weights = weights)
+    fit <- makeLoess(RTDF = rtDF, span = span,
+                     ssqRatio = ssqRatio, weights = weights)
   }
   if(plot) {
-    plot((reference - observed) ~ observed, data = rtDF, col = ifelse(fit$keep, 'black', 'red'), xlim = c(0, max(RT)), xlab = expression(RT[raw]), ylab = expression(RT[adj] - RT[raw]))
+    plot((reference - observed) ~ observed, data = rtDF,
+         col = ifelse(fit$keep, 'black', 'red'), xlim = c(0, max(RT)),
+         xlab = expression(RT[raw]), ylab = expression(RT[adj] - RT[raw]))
     abline(h = 0, col = 'grey', lty = 2)
     # lines(rtDF$observed, fit$pred - rtDF$observed)
   }
@@ -147,41 +172,53 @@ rtRecal <- function(file,
   if(method == 'GAM') {
     fit <- makeGAM(RTDF = rtDF, bs = bs, ssqRatio = ssqRatio, weights = weights)
   } else {
-    fit <- makeLoess(RTDF = rtDF, span = span, ssqRatio = ssqRatio, weights = weights)
+    fit <- makeLoess(RTDF = rtDF, span = span,
+                     ssqRatio = ssqRatio, weights = weights)
   }
 
-  # Apply last corrected scan (i.e. at last observed lama) to all subsequent scans
+  # Apply last corrected scan (i.e. at last observed lama) to subsequent scans
   dRTEnd <- (fit$pred - rtDF$observed)[nrow(rtDF)]
   RTNew <- RT
-  RTNew[RT <= rtDF$observed[nrow(rtDF)]] <- predict(fit$model, newdata = data.frame(observed = RTNew[RT <= rtDF$observed[nrow(rtDF)]]))
-  RTNew[RT > rtDF$observed[nrow(rtDF)]] <- RT[RT > rtDF$observed[nrow(rtDF)]] + dRTEnd
-
-  # If
+  RTNew[RT <= rtDF$observed[nrow(rtDF)]] <- 
+    predict(fit$model,
+            newdata = data.frame(observed =
+                                   RTNew[RT <= rtDF$observed[nrow(rtDF)]]))
+  RTNew[RT > rtDF$observed[nrow(rtDF)]] <- 
+    RT[RT > rtDF$observed[nrow(rtDF)]] + dRTEnd
+  
+  #Remove all < 0
   RTNew[RTNew < 0] <- 0
 
   # Plot RT correction applied to all scans
   if(plot) {
-    lines(RT, RTNew - RT, type = 'l', main = 'Final correction all scans - RT-diff')
+    lines(RT, RTNew - RT, type = 'l',
+          main = 'Final correction all scans - RT-diff')
     # abline(h = 0, col = 'grey', lty = 2)
   }
   
-  legend('topleft', pch = c(1, 1, NA), lty = c(NA, NA, 1), col = c('black', 'red', 'black'), legend = c('LaMa (used)', 'LaMa (excluded)', 'RT adjustment'), bty = 'n', cex = 0.75 * par()$cex)
+  legend('topleft', pch = c(1, 1, NA), lty = c(NA, NA, 1),
+         col = c('black', 'red', 'black'),
+         legend = c('LaMa (used)', 'LaMa (excluded)', 'RT adjustment'),
+         bty = 'n', cex = 0.75 * par()$cex)
 
   # Plot histograms of between-scan dRT
   if(plot) {
     dRT_org <- RT[-1] - RT[-length(RT)]
     dRT_corr <- RTNew[-1] - RTNew[-length(RTNew)]
     par(fig = c(0, 0.5, 0, 0.5), new = TRUE)
-    hist(dRT_org, xlim = range(c(dRT_org, dRT_corr)), xlab = expression(dRT[Raw]), main = '')
+    hist(dRT_org, xlim = range(c(dRT_org, dRT_corr)), 
+         xlab = expression(dRT[Raw]), main = '')
     par(fig = c(0.5, 1, 0, 0.5), new = TRUE)
-    hist(dRT_corr, xlim = range(c(dRT_org, dRT_corr)), xlab = expression(dRT[Adj]), main = '')
+    hist(dRT_corr, xlim = range(c(dRT_org, dRT_corr)), 
+         xlab = expression(dRT[Adj]), main = '')
   }
 
   if(jpg) dev.off()
 
   if(save) {
     MS@featureData$retentionTime <- RTNew
-    writeMSData(MS, file = paste0(dirname(file), '/rtRecal/', basename(file)), copy = TRUE)
+    writeMSData(MS, file = paste0(dirname(file),
+                                  '/rtRecal/', basename(file)), copy = TRUE)
   }
 
   return(invisible(data.frame(RTOld = RT,

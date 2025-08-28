@@ -292,8 +292,8 @@ setMethod(
         method <- match.arg(method)
         adj_rt <- bplapply(
             splitByFile(object, f = factor(seq_along(fileNames(object)))),
-            function(z, method, roiExpandRt, roiPpm, peakwidth, toleranceRt, ppm,
-                     tolerance, bs, span, ssqRatio, zeroWeight) {
+            function(z, method, roiExpandRt, roiPpm, peakwidth, toleranceRt,
+                     ppm, tolerance, bs, span, ssqRatio, zeroWeight) {
                 pks <- .lama_peak_detection(z, lamas, ppm = roiPpm,
                                             expandRt = roiExpandRt,
                                             peakwidth = peakwidth)
