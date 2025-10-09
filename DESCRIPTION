@@ -1,23 +1,36 @@
 Package: rtRecalibrate
 Type: Package
-Title: Recalibration of rt axis in mzML objects (e.g. from LC-HRMS)
+Title: Recalibration of RT Axis in mzML Objects (E.g. from LC-HRMS)
 Version: 0.1.03
-Author: Carl Brunius <carl.brunius@chalmers.se>,
-    Johannes Rainer <johannes.rainer@eurac.edu>
-Maintainer: Carl Brunius <carl.brunius@chalmers.se>
-Description: The package contains functions to perform alignment of the
-    retention time (RT) axis based on metabolite feature landmarks.
+Authors@R: c(
+    person("Anton", "Ribbenstedt", email = "parasitetwin@gmail.com", role = c("cre"), comment = c(ORCID = "0000-0002-9985-5644")),
+    person("Carl", "Brunius", email="carl.brunius@chalmers.se", role = c("aut"), comment=c(ORCID = "0000-0003-3957-870X")),
+    person("Johannes", "Rainer", email="johannes.rainer@eurac.edu", role = c("aut"), comment=c(ORCID = "0000-0002-6977-7147")))
+Description: Functions for performing alignment of the retention time (RT) axis based on metabolite feature landmarks.
+License: GPL-2
+biocViews: BiomedicalInformatics, Metabolomics, MassSpectrometry, BatchEffect, Normalization, Alignment
+Depends: R (>= 4.5.0)
 Imports:
     methods,
+    graphics,
     MSnbase,
     xcms,
-    foreach,
-    doParallel,
     MsCoreUtils,
     Spectra,
     mgcv,
-    BiocParallel
-License: GPL-2
+    BiocParallel,
+    stats
+Suggests: 
+    BiocStyle, 
+    knitr, 
+    rmarkdown,
+    testthat, 
+    faahKO, 
+    MsExperiment,
+    MsBackendMetaboLights,
+    MsIO
+RoxygenNote: 7.3.2
 Encoding: UTF-8
-LazyData: true
-RoxygenNote: 7.2.3
+URL: https://github.com/MetaboComp/rtRecalibrate
+BugReports: https://github.com/MetaboComp/rtRecalibrate/issues
+VignetteBuilder: knitr

@@ -11,9 +11,11 @@ plotRTAdjust(raw, adj, col, legend = TRUE, cex.legend = 0.5)
 
 \item{adj}{RT-adjusted data (in same format as raw)}
 
-\item{col}{Optional argument to specify plot color (should correspond to the order of files in raw and adj)}
+\item{col}{Optional argument to specify plot color
+(should correspond to the order of files in raw and adj)}
 
-\item{legend}{Optional argument to plot (TRUE; default) or suppress (FALSE) the legend}
+\item{legend}{Optional argument to plot (TRUE; default)
+or suppress (FALSE) the legend}
 
 \item{cex.legend}{Optional argument to change font size in legend}
 }
@@ -22,15 +24,4 @@ Returns a plot of RT adjustment vs the original recorded RTs
 }
 \description{
 Plot retention time (RT) adjustment
-}
-\examples{
-## Read the MS data
-mse <- MsExperiment::readMsExperiment(files)
-
-## Perform the recalibration on the data set
-res_mse <- recalibrateRt(mse, lamasRP)
-
-## Plot RT adjustment 
-par(mfrow = c(1, 1), mar = c(4, 4, 0, 0) + .5)
-plotRTAdjust(mse, res_mse)
 }

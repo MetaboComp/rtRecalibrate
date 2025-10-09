@@ -2,7 +2,8 @@
 % Please edit documentation in R/rtRecal.R
 \name{rtRecal}
 \alias{rtRecal}
-\title{Recalibrate retention time axis of mzML file to landmark reference - One file only}
+\title{Recalibrate retention time axis of mzML file to landmark reference
+ - One file only}
 \usage{
 rtRecal(
   file,
@@ -13,6 +14,7 @@ rtRecal(
   dRT_match = 15,
   ppm_match = 5,
   peakwidth = c(7, 50),
+  expandRt = 0,
   bs = "tp",
   span = 0.5,
   ssqRatio = 3,
@@ -25,7 +27,8 @@ rtRecal(
 \arguments{
 \item{file}{Path to a mzML file}
 
-\item{lamas}{Data frame with 2 columns describing the landmarks: m/z in the first and RT in the second}
+\item{lamas}{Data frame with 2 columns describing the landmarks: \"MZ\" in 
+the first and \"RT\" in the second}
 
 \item{method}{Type of warping performed: GAM or loess}
 
@@ -39,17 +42,25 @@ rtRecal(
 
 \item{peakwidth}{CentWave parameter to XCMS for detecting peaks in ROIs}
 
-\item{bs}{GAM smoothing method (defaults to thin plate; NB: B- and P-splines have been shown to produce artefacts)}
+\item{expandRt}{Defines the retention time range of the
+ROIs in lama_peak_detection(). The retention time range will be the 
+expected retention time of a lama +/- `expandRt`.}
+
+\item{bs}{GAM smoothing method (defaults to thin plate; NB: B- and P-splines 
+have been shown to produce artefacts)}
 
 \item{span}{Loess smoothing parameter}
 
 \item{ssqRatio}{Parameter for removing outliers in the warping}
 
-\item{zeroWeight}{Adding additional weight to the zero point {0,0}, reduces "the"weird" warping in the early RT range}
+\item{zeroWeight}{Adding additional weight to the zero point \{0,0\}, 
+reduces "the"weird" warping in the early RT range}
 
-\item{jpg}{Whether to store diagnostic plot in jpg format in "rtRecal_log/*.jpg" (TRUE/FALSE)}
+\item{jpg}{Whether to store diagnostic plot in jpg format in 
+"rtRecal_log/*.jpg" (TRUE/FALSE)}
 
-\item{plot}{Whether to produce plots (TRUE/FALSE; if jpg is TRUE, plots go to file instead of plot window)}
+\item{plot}{Whether to produce plots (TRUE/FALSE; if jpg is TRUE, plots go 
+to file instead of plot window)}
 
 \item{save}{Whether to save recalibrated file in "rtRecal/*.mzML"}
 }
@@ -57,8 +68,6 @@ rtRecal(
 Depends of save, plot and jpg
 }
 \description{
-Please see rtRecalibrate for standard interface for multiple files and parallelization
-}
-\examples{
-rtRecal(file = file, lamas = lamasRP)
+Please see rtRecalibrate for standard interface for
+ multiple files and parallelization
 }

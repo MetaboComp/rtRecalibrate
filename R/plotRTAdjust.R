@@ -9,22 +9,16 @@
 #' @param cex.legend Optional argument to change font size in legend
 #'
 #' @return Returns a plot of RT adjustment vs the original recorded RTs
-#' @export
+#' @importFrom graphics par
+#' @importFrom graphics lines
+#' @importFrom grDevices rainbow
+#' @importFrom xcms fromFile
 #'
-#' @examples
-#' ## Read the MS data
-#' mse <- MsExperiment::readMsExperiment(files)
-#' 
-#' ## Perform the recalibration on the data set
-#' res_mse <- recalibrateRt(mse, lamasRP)
-#' 
-#' ## Plot RT adjustment 
-#' par(mfrow = c(1, 1), mar = c(4, 4, 0, 0) + .5)
-#' plotRTAdjust(mse, res_mse)
+
 plotRTAdjust <- function(raw, adj, col, legend = TRUE, cex.legend = 0.5) {
   # Make sure relevant libraries are loaded
-  if(class(raw) == 'MsExperiment') library(MsExperiment)
-  if(class(raw) == 'MSnbase') library(MSnbase)
+  if(any(grepl('MsExperiment', is(raw)))) loadNamespace("MsExperiment")
+  if(any(grepl('MSnbase', is(raw)))) loadNamespace("MSnbase")
   
   # Fix plotting size for legend
   cex <- cex.legend * par()$cex

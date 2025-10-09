@@ -1,0 +1,187 @@
+---
+title: "General introduction"
+author: "Anton Ribbenstedt, Carl Brunius"
+date: "`r Sys.Date()`"
+output:
+  BiocStyle::html_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{General introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE, message=FALSE}
+knitr::opts_chunk$set(
+    collapse = TRUE,
+    comment = "##"
+)
+
+library(rtRecalibrate)
+library(stats)
+library(MsBackendMetaboLights)
+library(MsIO)
+library(MsExperiment)
+library(xcms)
+```
+
+# Motivation
+
+From the perspective of metabolites as the continuation of the central dogma of 
+biology, metabolomics provides the closest link to many phenotypes of interest.
+This makes untargeted LC-MS metabolomics data promising in teasing apart the 
+complexities of living systems. However, due to experimental reasons, the data
+includes non-wanted variation which limits quality and reproducibility, 
+especially if the data is obtained from several batches. 
+
+The rtRecalibrate package reduces unwanted variation by utilizing landmark
+features found within the sample matrix analyzed on the system utilized by the
+user. These landmark features are chosen to fulfill the following criteria:
+* Should cover the entire retention time (rt) of the chromatogram
+* Should cover the mass-to-charge ratio span measured with the method
+* Have enough white space to other features in both mass-to-charge ratio (mz)
+and rt as to not be confused with other features
+* Should be around 100-200 in order to avoid random variance but still not be 
+too taxing to evaluate computationally
+
+# Installation
+
+To install 'rtRecalibrate', install BiocManager first, if not installed. 
+Afterwards use the install function from BiocManager.
+
+```{r installing-package, eval = FALSE}
+#if (!requireNamespace("BiocManager", quietly = TRUE)) {
+#    install.packages("BiocManager")
+#}
+#BiocManager::install("rtRecalibrate")
+```
+
+# Data
+
+Since 'rtRecalibrate' is dependent on mzML files and space requirements
+are strict for bioconductor packages the 'MsBackendMetaboLights'
+and 'MsIO' packages are utilized to download mzML files from Metabolights
+to a local directory. To find out where the files are stored use the 
+commando 'MsBackendMetaboLights::mtbls_cached_data_files()' and to later
+remove the cached files use 
+the commando 'MsBackendMetaboLights::mtbls_delete_cache("MTBLS8735")'.
+
+```{r cacheing-data, message=FALSE, warning=FALSE}
+mtbls_sync_data_files(mtblsId = "MTBLS8735",
+      assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt")
+```
+
+To generate new landmarks mzML files (or any other applicable file format) of 
+the same sample matrix and electrospray ionization (ESI) are needed. Usually
+at least a hundred and preferably a couple of hundred files would be recommended
+but in this example only the 4 pooled QC samples from the dataset will be used.
+The files need to be preprocessed using 'xcms' to pick peaks, align
+retention times and group into features but _not_ gap filled or imputed as the
+gaps between files are utilized to find suitable features for landmarks.
+To begin with all file locations of the cached files are listed and the QCs are
+subsetted and read into an XcmsExperiment object using 'readMsExperiment'
+from the 'MsExperiment' package.
+
+```{r setting-up-MsExperiment}
+mzMLFiles <- mtbls_cached_data_files()$rpath
+mzMLFiles_QC <- mzMLFiles[grepl("QC", mzMLFiles)]
+msfiles <- readMsExperiment(mzMLFiles_QC)
+```
+Parameters for peak picking have been found through optimization in advance 
+through the use of the home brewed package 'IPO2', based on the 'IPO'
+package (https://doi.org/10.1186/s12859-015-0562-8). They are inserted into a
+centwave parameter object and applied using the function 'findChromPeaks()'.
+
+```{r xcms-preprocessing-findChromPeaks}
+cwp <- CentWaveParam(
+          peakwidth = c(2.744, 23.999),
+          mzdiff = 0.011015,
+          ppm = 5.8667,
+          snthresh = 10,
+          noise = 5000,
+          prefilter = c(6, 7000)
+       )
+xdata <- findChromPeaks(msfiles, param = cwp)
+```
+Parameters for retention time alignment and for peak grouping into features
+have also been discovered in advance using a home brewed, slightly modified
+version of 'IPO' with the only change that it accommodates version 4
+of 'xcms'. The parameters are inserted into an ObiwarpParam object and an
+PeakDensityParam object before applied to the XcmsExperiment file in order
+to align the retention times of the samples and group peaks into features over
+the samples.
+
+```{r xcms-preprocessing-adjustRtime-and-groupChromPeaks}
+pgp <- ObiwarpParam(binSize = 0.82,
+                    response = 8.92,
+                    gapInit = 0.06,
+                    gapExtend = 2.9,
+                    rtimeDifferenceThreshold = 50)
+                    
+xdata <- adjustRtime(xdata, param = pgp)
+
+pdp_pregroup <- PeakDensityParam(sampleGroups = rep("sQC",4),
+                                 minFraction = 0.8,
+                                 bw = 0.88, 
+                                 binSize = 0.0186)
+
+xdata <- groupChromPeaks(xdata, param = pdp_pregroup)
+```
+The resulting data in the XcmsExperiment object is then extracted and compiled
+into a proper peak table in order to accommodate format requirements for the
+function 'optimizeFindLM' used to find landmarks in the data.
+```{r setting-up-peak-table}
+peak_table <- featureValues(xdata, value = "into")
+featInfo <- featureDefinitions(xdata)
+featInfo <- paste(featInfo$mzmed, featInfo$rtmed, sep = "@")
+rownames(peak_table) <- featInfo
+peak_table <- t(peak_table)
+```
+Now the function 'optimizeFindLM()' is applied to the peak table in order to
+find landmarks. The function will apply a simple optimization method to the peak
+table and find 10 different alternatives striking a balance between: rt coverage
+(how large percentage of the rt axis that the features in the solution cover),
+minimum intensity (the lowest area peak among the features), allowed 
+missingness (the ratio of missing peaks among features in all samples), mzdiff
+(the smallest difference between m/z of features in the peak table), rtdiff
+(the smallest distance in rt between the features in the peak table). Once
+optimization is complete the user has to choose which of the 10 alterantives
+they want to use based on the optimization parameters and/or the list of
+landmark features.
+The 'split' parameter used below signifies the separator of mz and rt in the
+column names for the features ('mz@rt'). Prefilterintensity is the prefilter
+settings used for the xcms preprocessing that resulted in the peak table used
+for finding landmarks (or the equivalent setting if using other software than
+xcms for preprocessing). Since the example data is quite small we're setting
+'minLM' to 40 in order for the available features to be higher than the minimum
+landmarks cut-off but in a real dataset between 100-200 landmarks is 
+recommended.
+```{r finding-landmarks}
+landmark_suggestions <- optimizeFindLM(PT=peak_table,
+                                       split='@',
+                                       Prefilterintensity=7000,
+                                       minLM = 40)
+
+print(landmark_suggestions[[3]])
+                                       
+```
+Based on the results in this example the 2nd alternative was chosen based on the
+combination of mzdiff of 1.0, rtdiff > 11 and missingness of 0.01. Now that
+landmarks have been chosen we can use them to align all the samples from the
+study that was cached by 'MsBackendMetaboLights' package. This is done by
+running the 'rtRecalibrate' function from this package.
+```{r rtRecalibrate}
+landmarks_final <- landmark_suggestions[[1]][[2]]
+
+res_mse <- rtRecalibrate::rtRecalibratemzML(files=mzMLFiles,
+                                        lamas=landmarks_final,
+                                        method="GAM")
+
+```
+
+# Session information
+```{r session-info}
+sessionInfo()
+```

@@ -2,66 +2,158 @@
 % Please edit documentation in R/rtRecalibrate.R
 \name{rtRecalibrate}
 \alias{rtRecalibrate}
-\title{Recalibrate retention time axis of mzML file}
+\alias{rtRecalibrate,MsExperiment-method}
+\alias{rtRecalibrate,OnDiskMSnExp-method}
+\title{Recalibrate retention times based on landmark compounds}
 \usage{
-rtRecalibrate(
-  files,
+rtRecalibrate(object, ...)
+
+\S4method{rtRecalibrate}{MsExperiment}(
+  object,
   lamas,
   method = c("GAM", "loess"),
-  dRT_roi = 15,
-  ppm_roi = 40,
-  dRT_match = 15,
-  ppm_match = 5,
+  roiExpandRt = 15,
+  roiPpm = 40,
+  toleranceRt = 15,
+  ppm = 5,
+  tolerance = 0,
   peakwidth = c(7, 50),
   bs = "tp",
   span = 0.5,
   ssqRatio = 3,
   zeroWeight = 10,
-  jpg = TRUE,
-  plot = TRUE,
-  save = TRUE,
-  ...
+  BPPARAM = bpparam(),
+  plot = TRUE
+)
+
+\S4method{rtRecalibrate}{OnDiskMSnExp}(
+  object,
+  lamas,
+  method = c("GAM", "loess"),
+  roiExpandRt = 15,
+  roiPpm = 40,
+  toleranceRt = 15,
+  ppm = 5,
+  tolerance = 0,
+  peakwidth = c(7, 50),
+  bs = "tp",
+  span = 0.5,
+  ssqRatio = 3,
+  zeroWeight = 10,
+  BPPARAM = bpparam(),
+  plot = TRUE
 )
 }
 \arguments{
-\item{files}{Path to mzML file(s)}
+\item{object}{Either a `MsExperiment` or `OnDiskMSnExp` object with the MS
+data.}
 
-\item{lamas}{Data frame with 2 columns describing the landmarks: m/z in the first and RT in the second}
+\item{...}{ignored.}
 
-\item{method}{Type of warping performed: GAM or loess}
+\item{lamas}{`data.frame` with m/z values (first column) and retention
+times (second columns) of the landmarks.}
 
-\item{dRT_roi}{Determines RT width of ROIs for detecting landmarks}
+\item{method}{`character(1)` with the type of warping. Either
+`method = "GAM"` (default) or `method = "loess"`.}
 
-\item{ppm_roi}{Determines m/z width (in ppm) of ROIs for detecting landmarks}
+\item{roiExpandRt}{`numeric(1)` defining the retention time width left and
+right of the landmark's expected retention time (second column in
+`lamas`) where peak detection should be performed.}
 
-\item{dRT_match}{Tolerance (dRT) for matching possible ROI peaks to landmarks}
+\item{roiPpm}{`numeric(1)` defining the m/z width around the landmark's
+expected m/z (first column in `lamas`) where peak detection should be
+performed.}
 
-\item{ppm_match}{Tolerance (dRT) for matching possible ROI peaks to landmarks}
+\item{toleranceRt}{`numeric(1)` with the maximal allowed (absolute)
+difference in retention times between lamas and chromatographic peaks.
+Used for the mapping of identified chromatographic peaks and lamas.}
 
-\item{peakwidth}{CentWave parameter to XCMS for detecting peaks in ROIs}
+\item{ppm}{`numeric(1)` defining the m/z-relative maximal allowed
+difference in m/z between lamas and chromatographic peaks. Used for
+the mapping of identified chromatographic peaks and lamas.}
 
-\item{bs}{GAM smoothing method (defaults to thin plate; NB: B- and P-splines have been shown to produce artefacts)}
+\item{tolerance}{`numeric(1)` defining the absolute acceptable difference
+in m/z between lamas and chromatographic peaks. Used for the mapping
+of identified chromatographic peaks and lamas.}
 
-\item{span}{Loess smoothing parameter}
+\item{peakwidth}{`numeric(2)` with the lower and upper limit (in retention
+time) for the *centWave*-based chromatographic peak detection.}
 
-\item{ssqRatio}{Parameter for removing outliers in the warping}
+\item{bs}{`character(1)` defining the GAM moothing method. (defaults to
+thin plate; NB: B- and P-splines have been shown to produce artefacts).}
 
-\item{zeroWeight}{Adding additional weight to the zero point {0,0}, reduces "the"weird" warping in the early RT range}
+\item{span}{`numeric(1)` loess smoothing parameter.}
 
-\item{jpg}{Whether to store diagnostic plot in jpg format in "rtRecal_log/*.jpg" (TRUE/FALSE)}
+\item{ssqRatio}{`numeric(1)` defining the settings for removing outliers
+in the warping.}
 
-\item{plot}{Whether to produce plots (TRUE/FALSE; if jpg is TRUE, plots go to file instead of plot window)}
+\item{zeroWeight}{`numeric(1)`: additional weight to the zero point \{0,0\},
+reduces warping problems in the early RT range.}
 
-\item{save}{Whether to save recalibrated file in "rtRecal/*.mzML"}
+\item{BPPARAM}{Parallel processing setup. See [bpparam()] for more
+information.}
 
-\item{...}{Additional arguments}
+\item{plot}{Decide whether output from rtRecalibrate should be plotted or not}
 }
 \value{
-Depends of save, plot and jpg
+Input object with recalibrated retention times.
 }
 \description{
-Recalibrate retention time axis of mzML file
+Recalibrate retention times of provided MS data based on landmark features
+(lamas). For input data `object` being an `MsExperiment` (from the
+*MsExperiment* package) or `OnDiskMSnExp` (from the *MSnbase* package)
+chromatographic peak detection will be performed specifically looking for
+the landmark features and the retention times of the full data set will
+be recalibrated by aligning the observed retention times of the landmark
+features to the provided *expected* ones. Chromatographic peak detection
+will be performed using the *centWave* method from the *xcms* package.
+
+Chromatographic peaks are matched to lamas based on their m/z and retention
+times and parameters `toleranceRt`, `ppm` and `tolerance` defining
+acceptable deviations. Only lamas/chromatographic peaks with a 1:1 mapping
+are used to estimate retention time shifts.
 }
 \examples{
-rtRecal(file = file, lamas = lamasRP)
+data("landmarks_final")
+\donttest{
+  if (requireNamespace("MsBackendMetaboLights", quietly = TRUE)) {
+    MsBackendMetaboLights::mtbls_sync_data_files(
+      mtblsId = "MTBLS8735",
+      assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt"
+    )
+    
+    mzMLFiles <- MsBackendMetaboLights::mtbls_cached_data_files()$rpath
+    mzMLFiles_QC <- mzMLFiles[grepl("QC", mzMLFiles)]
+    
+    MsExpObj <- MsExperiment::readMsExperiment(mzMLFiles_QC)
+    
+    res_mse <- rtRecalibrate(object=MsExpObj,
+                                   lamas=landmarks_final,
+                                   method="GAM")
+  }
+}
+
+data("landmarks_final")
+\donttest{
+  if (requireNamespace("MsBackendMetaboLights", quietly = TRUE)) {
+    MsBackendMetaboLights::mtbls_sync_data_files(
+      mtblsId = "MTBLS8735",
+      assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt"
+    )
+    
+    mzMLFiles <- MsBackendMetaboLights::mtbls_cached_data_files()$rpath
+    mzMLFiles_QC <- mzMLFiles[grepl("QC", mzMLFiles)]
+    
+    MSnExpObj <- MSnbase::readMSData(mzMLFiles_QC,
+                                      mode="onDisk")
+    
+    res_mse <- rtRecalibrate(object=MSnExpObj,
+                                   lamas=landmarks_final,
+                                   method="GAM")
+  }
+}
+
+}
+\author{
+Carl Brunius, Johannes Rainer, Anton Ribbenstedt
 }

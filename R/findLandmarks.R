@@ -7,7 +7,7 @@
 #' @param mzdiff How large whitespace in mz a feature needs, typically 0.1
 #' @param rtdiff How large whitespace in rt a feature needs,
 #'  can vary quite a lot, but ~20 is sufficient
-#' @param minIntensity Value indicating what mean intensity is needed
+#' @param minIntensity Value indicating what min intensity is needed
 #'  for a feature to qualify as an LM
 #' @param minrttocheck Retention time value where noisy features
 #'  (that usually comes in the beginning of a run) can be ignored
@@ -15,6 +15,7 @@
 #' much missingness allowed for LaMas within all samples
 #'
 #' @return Returning potential Landmarks
+#' 
 
 findLandmarks <- function(dat,
                           mzrtdf,
@@ -31,7 +32,7 @@ findLandmarks <- function(dat,
   #Only check features with <20% missingness
   FeaturesWithFewNAs <- dat[,PropNAsinData < allowedmissingness]
   mzrtwithfewNAs <- mzrtdf[PropNAsinData < allowedmissingness, ]
-  Intensityvector <- apply(FeaturesWithFewNAs, 2, mean, na.rm=T)
+  Intensityvector <- apply(FeaturesWithFewNAs, 2, mean, na.rm=TRUE)
 
   LMcandidates <- FeaturesWithFewNAs[, Intensityvector > minIntensity]
   mzrtcandidates <- mzrtwithfewNAs[Intensityvector > minIntensity,]
@@ -42,7 +43,7 @@ findLandmarks <- function(dat,
     Landmarkmzs <- c()
     Landmarkrts <- c()
 
-    for(i in 1:ncol(LMcandidates)){
+    for(i in seq_len(ncol(LMcandidates))){
       mzofInterest <- mzrtcandidates$mzvec[i]
       rtofInterest <- mzrtcandidates$rtvec[i]
       Featsinregion <- sum(mzrtdf$mzvec>mzofInterest-mzdiff &
@@ -57,6 +58,7 @@ findLandmarks <- function(dat,
     }
 
     Landmarks <- data.frame(Landmarkmzs, Landmarkrts)
+    colnames(Landmarks) <- c("MZ", "RT")
   }
 
 return(Landmarks)

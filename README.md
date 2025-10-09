@@ -16,7 +16,7 @@ at github.com/MetaboComp).
 - Please ensure that R is installed (https://www.r-project.org/)
 - I also recommend installing RStudio for a smoother R experience (https://rstudio.com/) 
 
-mzRecalibrate depends on some packages from BioConductor
+rtRecalibrate depends on some packages from BioConductor
 ```
 if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 if (!require("mzR", quietly = TRUE)) BiocManager::install("mzR")

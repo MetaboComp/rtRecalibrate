@@ -1,0 +1,5 @@
+library(testthat)
+library(rtRecalibrate)
+data("landmarks_final")
+data("peak_table")
+test_check("rtRecalibrate")
