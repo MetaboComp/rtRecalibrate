@@ -1,7 +1,7 @@
 Package: rtRecalibrate
 Type: Package
 Title: Recalibration of RT Axis in mzML Objects (E.g. from LC-HRMS)
-Version: 0.1.03
+Version: 0.1.13
 Authors@R: c(
     person("Anton", "Ribbenstedt", email = "parasitetwin@gmail.com", role = c("cre"), comment = c(ORCID = "0000-0002-9985-5644")),
     person("Carl", "Brunius", email="carl.brunius@chalmers.se", role = c("aut"), comment=c(ORCID = "0000-0003-3957-870X")),
