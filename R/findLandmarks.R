@@ -11,55 +11,50 @@
 #'  for a feature to qualify as an LM
 #' @param minrttocheck Retention time value where noisy features
 #'  (that usually comes in the beginning of a run) can be ignored
-#' @param allowedmissingness Double between 0 - 1 specifying how 
+#' @param allowedmissingness Double between 0 - 1 specifying how
 #' much missingness allowed for LaMas within all samples
 #'
 #' @return Returning potential Landmarks
-#' 
+#'
 
-findLandmarks <- function(dat,
-                          mzrtdf,
-                          mzdiff,
-                          rtdiff,
-                          minIntensity,
-                          minrttocheck,
-                          allowedmissingness)
-{
-  Landmarks <- c(NA,NA)
-  #Calculate missingness in each feature
-  PropNAsinData <- apply(dat, 2, function (x) sum(is.na(x))/length(x))
+findLandmarks <- function(dat, mzrtdf, mzdiff, rtdiff, minIntensity,
+                            minrttocheck,
+            allowedmissingness) {
+    Landmarks <- c(NA, NA)
+    ## Calculate missingness in each feature
+    PropNAsinData <- apply(dat, 2, function(x) sum(is.na(x)) / length(x))
 
-  #Only check features with <20% missingness
-  FeaturesWithFewNAs <- dat[,PropNAsinData < allowedmissingness]
-  mzrtwithfewNAs <- mzrtdf[PropNAsinData < allowedmissingness, ]
-  Intensityvector <- apply(FeaturesWithFewNAs, 2, mean, na.rm=TRUE)
+    ## Only check features with <20% missingness
+    FeaturesWithFewNAs <- dat[, PropNAsinData < allowedmissingness]
+    mzrtwithfewNAs <- mzrtdf[PropNAsinData < allowedmissingness, ]
+    Intensityvector <- apply(FeaturesWithFewNAs, 2, mean, na.rm = TRUE)
 
-  LMcandidates <- FeaturesWithFewNAs[, Intensityvector > minIntensity]
-  mzrtcandidates <- mzrtwithfewNAs[Intensityvector > minIntensity,]
-  LMcandidates <- LMcandidates[, mzrtcandidates$rtvec > minrttocheck]
-  mzrtcandidates <- mzrtcandidates[mzrtcandidates$rtvec > minrttocheck, ]
+    LMcandidates <- FeaturesWithFewNAs[, Intensityvector > minIntensity]
+    mzrtcandidates <- mzrtwithfewNAs[Intensityvector > minIntensity, ]
+    LMcandidates <- LMcandidates[, mzrtcandidates$rtvec > minrttocheck]
+    mzrtcandidates <- mzrtcandidates[mzrtcandidates$rtvec > minrttocheck, ]
 
-  if(ncol(LMcandidates)>10){
-    Landmarkmzs <- c()
-    Landmarkrts <- c()
+    if (ncol(LMcandidates) > 10) {
+        Landmarkmzs <- c()
+        Landmarkrts <- c()
 
-    for(i in seq_len(ncol(LMcandidates))){
-      mzofInterest <- mzrtcandidates$mzvec[i]
-      rtofInterest <- mzrtcandidates$rtvec[i]
-      Featsinregion <- sum(mzrtdf$mzvec>mzofInterest-mzdiff &
-                           mzrtdf$mzvec<mzofInterest+mzdiff &
-                           mzrtdf$rtvec>rtofInterest-rtdiff &
-                           mzrtdf$rtvec<rtofInterest+rtdiff)
+        for (i in seq_len(ncol(LMcandidates))) {
+            mzofInterest <- mzrtcandidates$mzvec[i]
+            rtofInterest <- mzrtcandidates$rtvec[i]
+            Featsinregion <- sum(mzrtdf$mzvec > mzofInterest - mzdiff &
+                mzrtdf$mzvec < mzofInterest + mzdiff &
+                mzrtdf$rtvec > rtofInterest - rtdiff &
+                mzrtdf$rtvec < rtofInterest + rtdiff)
 
-      if(Featsinregion==1){
-        Landmarkmzs <- c(Landmarkmzs, mzofInterest)
-        Landmarkrts <- c(Landmarkrts, rtofInterest)
-      }
+            if (Featsinregion == 1) {
+                Landmarkmzs <- c(Landmarkmzs, mzofInterest)
+                Landmarkrts <- c(Landmarkrts, rtofInterest)
+            }
+        }
+
+        Landmarks <- data.frame(Landmarkmzs, Landmarkrts)
+        colnames(Landmarks) <- c("MZ", "RT")
     }
 
-    Landmarks <- data.frame(Landmarkmzs, Landmarkrts)
-    colnames(Landmarks) <- c("MZ", "RT")
-  }
-
-return(Landmarks)
+    return(Landmarks)
 }

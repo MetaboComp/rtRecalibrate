@@ -61,7 +61,7 @@
 #'
 #' @param BPPARAM Parallel processing setup. See [bpparam()] for more
 #'     information.
-#'     
+#'
 #' @param plot Decide whether output from rtRecalibrate should be plotted or not
 #'
 #' @param ... ignored.
@@ -70,8 +70,9 @@
 #'
 #' @import methods
 #' @export
-setGeneric("rtRecalibrate", def = function(object, ...)
-    standardGeneric("rtRecalibrate"))
+setGeneric("rtRecalibrate", def = function(object, ...) {
+    standardGeneric("rtRecalibrate")
+})
 
 #' @importMethodsFrom Spectra rtime<-
 #'
@@ -81,62 +82,73 @@ setGeneric("rtRecalibrate", def = function(object, ...)
 #' @examples
 #' data("landmarks_final")
 #' \donttest{
-#'   if (requireNamespace("MsBackendMetaboLights", quietly = TRUE)) {
+#' if (requireNamespace("MsBackendMetaboLights", quietly = TRUE)) {
 #'     MsBackendMetaboLights::mtbls_sync_data_files(
-#'       mtblsId = "MTBLS8735",
-#'       assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt"
+#'  mtblsId = "MTBLS8735",
+#'  assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt"
 #'     )
-#'     
+#'
 #'     mzMLFiles <- MsBackendMetaboLights::mtbls_cached_data_files()$rpath
 #'     mzMLFiles_QC <- mzMLFiles[grepl("QC", mzMLFiles)]
-#'     
+#'
 #'     MsExpObj <- MsExperiment::readMsExperiment(mzMLFiles_QC)
-#'     
-#'     res_mse <- rtRecalibrate(object=MsExpObj,
-#'                                    lamas=landmarks_final,
-#'                                    method="GAM")
-#'   }
+#'
+#'     res_mse <- rtRecalibrate(
+#'         object = MsExpObj,
+#'         lamas = landmarks_final,
+#'         method = "GAM"
+#'     )
+#' }
 #' }
 #'
 #' @rdname rtRecalibrate
 setMethod(
     "rtRecalibrate", "MsExperiment",
     function(object, lamas, method = c("GAM", "loess"), roiExpandRt = 15,
-             roiPpm = 40, toleranceRt = 15, ppm = 5, tolerance = 0,
-             peakwidth = c(7, 50), bs = "tp", span = 0.5, ssqRatio = 3,
-             zeroWeight = 10, BPPARAM = bpparam(), plot=TRUE) {
-      
-        #Error checking
-        if(!(method %in% c("GAM", "loess"))){
-          stop("Method has to be either \"GAM\" or \"loess\"")
+            roiPpm = 40, toleranceRt = 15, ppm = 5, tolerance = 0,
+            peakwidth = c(7, 50), bs = "tp", span = 0.5, ssqRatio = 3,
+            zeroWeight = 10, BPPARAM = bpparam(), plot = TRUE) {
+        ## Error checking
+        if (!(method %in% c("GAM", "loess"))) {
+            stop("Method has to be either \"GAM\" or \"loess\"")
         }
-        if(length(method) > 1){
-          stop("A single method has to be selected to use rtRecalibrate")
+        if (length(method) > 1) {
+            stop("A single method has to be selected to use rtRecalibrate")
         }
         method <- match.arg(method)
         adj_rt <- bplapply(
             split(object, seq_along(object)),
             function(z, method, roiExpandRt, roiPpm, peakwidth, toleranceRt,
-                     ppm, tolerance, bs, span, ssqRatio, zeroWeight) {
-                pks <- lama_peak_detection(z, lamas, ppm = roiPpm,
-                                            expandRt = roiExpandRt,
-                                            peakwidth = peakwidth)
+                    ppm, tolerance, bs, span, ssqRatio, zeroWeight) {
+                pks <- lama_peak_detection(z, lamas,
+                    ppm = roiPpm,
+                    expandRt = roiExpandRt,
+                    peakwidth = peakwidth
+                )
                 lama_rt <- match_peaks_lamas(
-                    pks, lamas, tolerance = tolerance,
-                    ppm = ppm, toleranceRt = toleranceRt)
-                rtm <- data.frame(reference = lamas$RT,
-                                  observed = lama_rt)
+                    pks, lamas,
+                    tolerance = tolerance,
+                    ppm = ppm, toleranceRt = toleranceRt
+                )
+                rtm <- data.frame(
+                    reference = lamas$RT,
+                    observed = lama_rt
+                )
                 lama_rt_correction(
                     rt = rtime(z), rtMap = rtm, method = method,
                     bs = bs, span = span, ssqRatio = ssqRatio,
-                    zeroWeight = zeroWeight, plot=plot)
-            }, method = method, roiExpandRt = roiExpandRt, roiPpm = roiPpm,
+                    zeroWeight = zeroWeight, plot = plot
+                )
+            },
+            method = method, roiExpandRt = roiExpandRt, roiPpm = roiPpm,
             peakwidth = peakwidth, toleranceRt = toleranceRt, ppm = ppm,
             tolerance = tolerance, bs = bs, span = span, ssqRatio = ssqRatio,
-            zeroWeight = zeroWeight, BPPARAM = BPPARAM)
+            zeroWeight = zeroWeight, BPPARAM = BPPARAM
+        )
         rtime(object@spectra) <- unlist(adj_rt, use.names = FALSE)
         object
-    })
+    }
+)
 
 #' @importMethodsFrom MSnbase splitByFile fileNames
 #'
@@ -144,56 +156,77 @@ setMethod(
 #' @examples
 #' data("landmarks_final")
 #' \donttest{
-#'   if (requireNamespace("MsBackendMetaboLights", quietly = TRUE)) {
+#' if (requireNamespace("MsBackendMetaboLights", quietly = TRUE)) {
 #'     MsBackendMetaboLights::mtbls_sync_data_files(
-#'       mtblsId = "MTBLS8735",
-#'       assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt"
+#'  mtblsId = "MTBLS8735",
+#'  assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt"
 #'     )
-#'     
+#'
 #'     mzMLFiles <- MsBackendMetaboLights::mtbls_cached_data_files()$rpath
 #'     mzMLFiles_QC <- mzMLFiles[grepl("QC", mzMLFiles)]
-#'     
+#'
 #'     MSnExpObj <- MSnbase::readMSData(mzMLFiles_QC,
-#'                                       mode="onDisk")
-#'     
-#'     res_mse <- rtRecalibrate(object=MSnExpObj,
-#'                                    lamas=landmarks_final,
-#'                                    method="GAM")
-#'   }
+#'         mode = "onDisk"
+#'     )
+#'
+#'     res_mse <- rtRecalibrate(
+#'         object = MSnExpObj,
+#'         lamas = landmarks_final,
+#'         method = "GAM"
+#'     )
+#' }
 #' }
 #'
 #' @rdname rtRecalibrate
 setMethod(
     "rtRecalibrate", "OnDiskMSnExp",
     function(object, lamas, method = c("GAM", "loess"), roiExpandRt = 15,
-             roiPpm = 40, toleranceRt = 15, ppm = 5, tolerance = 0,
-             peakwidth = c(7, 50), bs = "tp", span = 0.5, ssqRatio = 3,
-             zeroWeight = 10, BPPARAM = bpparam(), plot=TRUE) {
+            roiPpm = 40, toleranceRt = 15, ppm = 5, tolerance = 0,
+            peakwidth = c(7, 50), bs = "tp", span = 0.5, ssqRatio = 3,
+            zeroWeight = 10, BPPARAM = bpparam(), plot = TRUE) {
+        ## Error checking
+        if (!(method %in% c("GAM", "loess"))) {
+            stop("Method has to be either \"GAM\" or \"loess\"")
+        }
+        if (length(method) > 1) {
+            stop("A single method has to be selected to use rtRecalibrate")
+        }
+
         method <- match.arg(method)
         adj_rt <- bplapply(
             splitByFile(object, f = factor(seq_along(fileNames(object)))),
             function(z, method, roiExpandRt, roiPpm, peakwidth, toleranceRt,
-                     expandRt = roiExpandRt,
-                     ppm, tolerance, bs, span, ssqRatio, zeroWeight) {
-                pks <- lama_peak_detection(z, lamas, ppm = roiPpm,
-                                            expandRt = roiExpandRt,
-                                            peakwidth = peakwidth)
+                    expandRt = roiExpandRt,
+                    ppm, tolerance, bs, span, ssqRatio, zeroWeight) {
+                pks <- lama_peak_detection(z, lamas,
+                    ppm = roiPpm,
+                    expandRt = roiExpandRt,
+                    peakwidth = peakwidth
+                )
                 lama_rt <- match_peaks_lamas(
-                    pks, lamas, tolerance = tolerance,
-                    ppm = ppm, toleranceRt = toleranceRt)
-                rtm <- data.frame(reference = lamas$RT,
-                                  observed = lama_rt)
+                    pks, lamas,
+                    tolerance = tolerance,
+                    ppm = ppm, toleranceRt = toleranceRt
+                )
+                rtm <- data.frame(
+                    reference = lamas$RT,
+                    observed = lama_rt
+                )
                 lama_rt_correction(
                     rt = rtime(z), rtMap = rtm, method = method,
                     bs = bs, span = span, ssqRatio = ssqRatio,
-                    zeroWeight = zeroWeight, plot=plot)
-            }, method = method, roiExpandRt = roiExpandRt, roiPpm = roiPpm,
+                    zeroWeight = zeroWeight, plot = plot
+                )
+            },
+            method = method, roiExpandRt = roiExpandRt, roiPpm = roiPpm,
             peakwidth = peakwidth, toleranceRt = toleranceRt, ppm = ppm,
             tolerance = tolerance, bs = bs, span = span, ssqRatio = ssqRatio,
-            zeroWeight = zeroWeight, BPPARAM = BPPARAM)
+            zeroWeight = zeroWeight, BPPARAM = BPPARAM
+        )
         object@featureData$retentionTime <- unlist(adj_rt, use.names = FALSE)
         object
-    })
+    }
+)
 
 
 

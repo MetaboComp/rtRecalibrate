@@ -70,7 +70,7 @@ the commando 'MsBackendMetaboLights::mtbls_delete_cache("MTBLS8735")'.
 
 ```{r cacheing-data, message=FALSE, warning=FALSE}
 mtbls_sync_data_files(mtblsId = "MTBLS8735",
-      assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt")
+        assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt")
 ```
 
 To generate new landmarks mzML files (or any other applicable file format) of 
@@ -96,13 +96,13 @@ centwave parameter object and applied using the function 'findChromPeaks()'.
 
 ```{r xcms-preprocessing-findChromPeaks}
 cwp <- CentWaveParam(
-          peakwidth = c(2.744, 23.999),
-          mzdiff = 0.011015,
-          ppm = 5.8667,
-          snthresh = 10,
-          noise = 5000,
-          prefilter = c(6, 7000)
-       )
+            peakwidth = c(2.744, 23.999),
+            mzdiff = 0.011015,
+            ppm = 5.8667,
+            snthresh = 10,
+            noise = 5000,
+            prefilter = c(6, 7000)
+            )
 xdata <- findChromPeaks(msfiles, param = cwp)
 ```
 Parameters for retention time alignment and for peak grouping into features
@@ -123,9 +123,9 @@ pgp <- ObiwarpParam(binSize = 0.82,
 xdata <- adjustRtime(xdata, param = pgp)
 
 pdp_pregroup <- PeakDensityParam(sampleGroups = rep("sQC",4),
-                                 minFraction = 0.8,
-                                 bw = 0.88, 
-                                 binSize = 0.0186)
+                                minFraction = 0.8,
+                                bw = 0.88, 
+                                binSize = 0.0186)
 
 xdata <- groupChromPeaks(xdata, param = pdp_pregroup)
 ```
@@ -160,12 +160,11 @@ landmarks cut-off but in a real dataset between 100-200 landmarks is
 recommended.
 ```{r finding-landmarks}
 landmark_suggestions <- optimizeFindLM(PT=peak_table,
-                                       split='@',
-                                       Prefilterintensity=7000,
-                                       minLM = 40)
+                                        split='@',
+                                        Prefilterintensity=7000,
+                                        minLM = 40)
 
 print(landmark_suggestions[[3]])
-                                       
 ```
 Based on the results in this example the 2nd alternative was chosen based on the
 combination of mzdiff of 1.0, rtdiff > 11 and missingness of 0.01. Now that

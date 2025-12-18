@@ -15,7 +15,7 @@
 #' @param span Loess smoothing parameter
 #' @param ssqRatio Parameter for removing outliers in the warping
 #' @param zeroWeight Adding additional weight to the zero point \{0,0\},
-#'  reduces "the"weird" warping in the early RT range 
+#'  reduces "the"weird" warping in the early RT range
 #' @param jpg Whether to store diagnostic plot in jpg format
 #'  in "rtRecal_log/*.jpg" (TRUE/FALSE)
 #' @param plot Whether to produce plots
@@ -28,113 +28,123 @@
 #' @examples
 #' data("landmarks_final")
 #' \donttest{
-#'   if (requireNamespace("MsBackendMetaboLights", quietly = TRUE)) {
+#' if (requireNamespace("MsBackendMetaboLights", quietly = TRUE)) {
 #'     MsBackendMetaboLights::mtbls_sync_data_files(
-#'       mtblsId = "MTBLS8735",
-#'       assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt"
+#'  mtblsId = "MTBLS8735",
+#'  assayName = "a_MTBLS8735_LC-MS_positive_hilic_metabolite_profiling.txt"
 #'     )
-#'     
+#'
 #'     mzMLFiles <- MsBackendMetaboLights::mtbls_cached_data_files()$rpath
-#'     
-#'     res_mse <- rtRecalibrate::rtRecalibratemzML(files=mzMLFiles,
-#'                                    lamas=landmarks_final,
-#'                                    method="GAM")
-#'   }
+#'
+#'     res_mse <- rtRecalibrate::rtRecalibratemzML(
+#'         files = mzMLFiles,
+#'         lamas = landmarks_final,
+#'         method = "GAM"
+#'     )
 #' }
-#' 
-#'                       
+#' }
+#'
 
-#'                                         
+#'
 
-rtRecalibratemzML <- function(files, 
-                          lamas, 
-                          method = c('GAM', 'loess'),
-                          dRT_roi = 15, 
-                          ppm_roi = 40, 
-                          dRT_match = 15, 
-                          ppm_match = 5, 
-                          peakwidth = c(7, 50), 
-                          bs = 'tp', 
-                          span = 0.5,
-                          ssqRatio = 3,
-                          zeroWeight = 10,
-                          jpg = TRUE,
-                          plot = TRUE,
-                          save = TRUE,
-                          ...) {
-  
-  #Error checking
-  for(i in seq_len(length(files))){
-    #If 1 file doesn't exist, throw error
-    if(!file.exists(files[i])){
-      stop("One or more of the files to be processed don't exist.")
+rtRecalibratemzML <- function(files,
+                                lamas,
+                                method = c("GAM", "loess"),
+                                dRT_roi = 15,
+                                ppm_roi = 40,
+                                dRT_match = 15,
+                                ppm_match = 5,
+                                peakwidth = c(7, 50),
+                                bs = "tp",
+                                span = 0.5,
+                                ssqRatio = 3,
+                                zeroWeight = 10,
+                                jpg = TRUE,
+                                plot = TRUE,
+                                save = TRUE,
+                                ...) {
+    ## Error checking
+    for (i in seq_len(length(files))) {
+        ## If 1 file doesn't exist, throw error
+        if (!file.exists(files[i])) {
+            stop("One or more of the files to be processed don't exist.")
+        }
+
+        ## If 1 file is not mzML, throw error
+        if (!grepl(".mzML", files[i])) {
+            stop("One or more of the files is not an .mzML file.")
+        }
     }
-    
-    #If 1 file is not mzML, throw error
-    if(!grepl(".mzML", files[i])){
-      stop("One or more of the files is not an .mzML file.")
+
+    corrections <- list()
+
+    for (i in seq_len(length(files))) {
+        corrections[[basename(files[i])]] <- rtRecal(
+            file = files[i],
+            lamas = lamas,
+            method = method,
+            dRT_roi = dRT_roi,
+            ppm_roi = ppm_roi,
+            dRT_match = dRT_match,
+            ppm_match = ppm_match,
+            peakwidth = peakwidth,
+            bs = bs,
+            span = span,
+            ssqRatio = ssqRatio,
+            zeroWeight = zeroWeight,
+            jpg = jpg,
+            plot = plot,
+            save = save,
+            ...
+        )
     }
-  }
-  
-  corrections <- list()
-  
-  for (i in seq_len(length(files))) {
-    corrections[[basename(files[i])]] <- rtRecal(file = files[i], 
-                              lamas = lamas, 
-                              method = method,
-                              dRT_roi = dRT_roi, 
-                              ppm_roi = ppm_roi, 
-                              dRT_match = dRT_match, 
-                              ppm_match = ppm_match, 
-                              peakwidth = peakwidth, 
-                              bs = bs, 
-                              span = span,
-                              ssqRatio = ssqRatio,
-                              zeroWeight = zeroWeight,
-                              jpg = jpg,
-                              plot = plot,
-                              save = save,
-                              ...)
-  }
-  
-  if(plot) {
-    
-    # Save jpg
-    jpeg(filename = paste0(dirname(files[1]),
-                           '/rtRecal_log/all_adjustments.jpg'),
-         width = 1000,
-         height = 2000, pointsize = 30)
-    
-    # Identify plot ranges
-    dRTmin <- 0
-    dRTmax <- 0
-    xmin <- 0
-    xmax <- 0
-    for (i in seq_len(length(corrections))) {
-      dRTmin <- min(dRTmin, min(corrections[[i]]$dRT))
-      dRTmax <- max(dRTmax, max(corrections[[i]]$dRT))
-      xmin <- min(xmin, min(corrections[[i]]$RTOld))
-      xmax <- max(xmax, max(corrections[[i]]$RTOld))
+
+    if (plot) {
+        ## Save jpg
+        jpeg(
+            filename = paste0(
+                dirname(files[1]),
+                "/rtRecal_log/all_adjustments.jpg"
+            ),
+            width = 1000,
+            height = 2000, pointsize = 30
+        )
+
+        ## Identify plot ranges
+        dRTmin <- 0
+        dRTmax <- 0
+        xmin <- 0
+        xmax <- 0
+        for (i in seq_len(length(corrections))) {
+            dRTmin <- min(dRTmin, min(corrections[[i]]$dRT))
+            dRTmax <- max(dRTmax, max(corrections[[i]]$dRT))
+            xmin <- min(xmin, min(corrections[[i]]$RTOld))
+            xmax <- max(xmax, max(corrections[[i]]$RTOld))
+        }
+
+        ## Colors correspondding to files
+        col <- rainbow(length(corrections))
+
+        ## Actual RT correction plots
+        plot(0, 0,
+            ylim = c(dRTmin, dRTmax), xlim = c(xmin, xmax), type = "n",
+            las = 1, xlab = "Recorded Retention Time",
+            ylab = "Retention Time Alignment"
+        )
+        for (i in seq_len(length(corrections))) {
+            lines(corrections[[i]]$RTOld,
+                corrections[[i]]$dRT,
+                col = col[i]
+            )
+        }
+
+        legend("topleft",
+            legend = names(corrections),
+            col = col, lty = 1, bty = "n"
+        )
     }
-    
-    # Colors correspondding to files
-    col <- rainbow(length(corrections))
-    
-    # Actual RT correction plots
-    plot(0, 0, ylim = c(dRTmin, dRTmax), xlim = c(xmin, xmax), type = 'n',
-         las = 1, xlab = 'Recorded Retention Time',
-         ylab = 'Retention Time Alignment')
-    for (i in seq_len(length(corrections))) {
-      lines(corrections[[i]]$RTOld, 
-            corrections[[i]]$dRT,
-            col = col[i])
-    }
-    
-    legend('topleft', legend = names(corrections),
-           col = col, lty = 1, bty = 'n')
-  }
-  
-  dev.off()
-  
-  return(invisible(corrections))
+
+    dev.off()
+
+    return(invisible(corrections))
 }
